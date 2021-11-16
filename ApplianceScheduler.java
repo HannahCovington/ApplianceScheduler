@@ -92,8 +92,7 @@ public class ApplianceScheduler {
 		//DISTRIBUTING PROBABILITY FOR EACH TIMESTEP-------------------
 		double timeStepProb = 1d/occupied; //for now, everything has same probability
 		//------------------------------------------------------------
-		dishwasherPresent = true;
-		loadsThisWeek = 5;
+
 		//SCHEDULING THE APPLIANCE--------------------------------------
 		if (dishwasherPresent == true) {
 			//getting which occupied timesteps are activated
@@ -101,7 +100,7 @@ public class ApplianceScheduler {
 			int safeGuard = 0;
 			while(j<=loadsThisWeek) { 
 				safeGuard++;
-				if (safeGuard == 10000) { //prevents infinite loop in case that loading not possible. Or other reason. 
+				if (safeGuard == 10000) { //prevents infinite loop in case that loading not possible. DOES NOT WORK
 					System.out.println("SafeGuard Reached. Ensure that loading is possible");
 					break;
 				}
