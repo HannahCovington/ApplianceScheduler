@@ -1,9 +1,10 @@
 import java.util.ArrayList;
 import java.util.Arrays;
-
+import java.io.FileWriter;
+import java.io.IOException;
 public class ApplianceScheduler {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		
 		//DECLARING VARIABLES--------------------
 		//dishwasher use
@@ -149,8 +150,18 @@ public class ApplianceScheduler {
 				}
 			}
 			System.out.println(Arrays.toString(applianceSchedule));
+			
+			//Write to .csv file
+			FileWriter writer = new FileWriter("C:\\Users\\Hannah\\Desktop\\results.csv");
+			for (int w = 0; w < applianceSchedule.length; w++) {
+				writer.append(String.valueOf(applianceSchedule[w])+",			!- Timestep " + w);
+				writer.append("\n");
+			}
+			writer.close();
 		}
+		
 		//------------------------------------------------------------------
+		
 	}
 
 }
