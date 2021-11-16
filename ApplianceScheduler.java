@@ -13,7 +13,7 @@ public class ApplianceScheduler {
 		double sit3prob = .278 + sit2prob; //2 to 3 runs
 		double sit4prob = .131 + sit3prob; //4 to 6 runs
 		double sit5prob = .082 + sit4prob; //7+ runs
-		int duration = 1; //number of timesteps the dishwasher is run 
+		int duration = 2; //number of timesteps the dishwasher is run 
 		//random numbers that determine use
 		double determinePresenceOfDishwasher;
 		double weekClassification;
@@ -27,7 +27,9 @@ public class ApplianceScheduler {
 		int occupied=0;
 		double probNew = 0;
 		double probOld;
+		boolean trip = false;
 		ArrayList<Integer> activeTimeSteps = new ArrayList<Integer>();
+		ArrayList<Integer> turnOnTimeSteps = new ArrayList<Integer>();
 		//----------------------------------------------------
 		
 		//DISHWASHER PRESENCE IN HOUSEHOLD ------------
@@ -76,7 +78,7 @@ public class ApplianceScheduler {
 		//GETTING OCCUPANCY DATA (hard coded for now)---------------------
 		
 		//hard coded occupancy data, will later be replaced with read file
-		int[] occupancyData = new int[] {0,0,1,0,1,1,1,1,1,1,0};
+		int[] occupancyData = new int[] {0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0};
 		System.out.println(Arrays.toString(occupancyData));
 		//how many time steps are occupied? (add awake later)
 		for (int i = 0; i<occupancyData.length;i++) {
@@ -89,21 +91,37 @@ public class ApplianceScheduler {
 		//DISTRIBUTING PROBABILITY FOR EACH TIMESTEP-------------------
 		double timeStepProb = 1d/occupied; //for now, everything has same probability
 		//------------------------------------------------------------
-		
+		dishwasherPresent = true;
+		loadsThisWeek = 5;
 		//SCHEDULING THE APPLIANCE--------------------------------------
 		if (dishwasherPresent == true) {
 			//getting which occupied timesteps are activated
 			int j = 1;
+			int safeGuard = 0;
 			while(j<=loadsThisWeek) { 
+				safeGuard++;
+				if (safeGuard == 10000) { //prevents infinite loop in case that loading not possible. Or other reason. 
+					System.out.println("SafeGuard Reached. Ensure that loading is possible");
+					break;
+				}
 				determineTimeStep = Math.random();
 				for (int i = 0; i < occupied; i++) {
 					probOld = probNew;
 					probNew = probOld + timeStepProb;
 					if (determineTimeStep > probOld && determineTimeStep <= probNew) {
-						if (activeTimeSteps.contains(i)==false) {  //add duration stuff here!
-							activeTimeSteps.add(i);
+						for (int k=i;k<=i+duration-1;k++) {
+							if(activeTimeSteps.contains(k)==true) {
+								trip = true;
+							}
+						}
+						if (trip==false) {
+							for (int m = i; m<=i+duration-1;m++) {
+								activeTimeSteps.add(m);
+								turnOnTimeSteps.add(i);
+							}
 							j++;
 						}
+						trip = false;
 					}
 				}
 			probNew = 0;
@@ -111,11 +129,17 @@ public class ApplianceScheduler {
 			System.out.println(activeTimeSteps);
 			//finalizing schedule
 			int[] applianceSchedule = new int[occupancyData.length];
-			int occupiedCount = 0;
+			int occupiedCount=0;
 			for(int i = 0; i< occupancyData.length;i++) {
-				if(occupancyData[i] == 1) {
-					if(activeTimeSteps.contains(occupiedCount)) {
-						applianceSchedule[i] = 1;
+				System.out.println(occupiedCount);
+				if (applianceSchedule[i] == 1) {
+					if(occupancyData[i] == 1) {
+						occupiedCount++;
+					}
+				}else if(occupancyData[i] == 1) {
+					if(turnOnTimeSteps.contains(occupiedCount)) {
+						for (int p = i; p<=i+duration-1;p++)
+						applianceSchedule[p] = 1;
 					}else {
 						applianceSchedule[i] = 0;
 					}
