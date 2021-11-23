@@ -15,8 +15,11 @@ public class ApplianceScheduler {
 		double sit3prob = .278 + sit2prob; //probability for 2 to 3 runs
 		double sit4prob = .131 + sit3prob; //probability for 4 to 6 runs
 		int timeStepInMinutes = 60; //time step length in minutes !!!MAKE EASILY DIVISIBLE INTO 60!!!
-		int duration = 2; //number of timesteps the dishwasher is run 
-		boolean schedulingWeek = true; //will we be scheduling entire weeks?
+		int duration = 1; //number of timesteps the dishwasher is run 
+		boolean schedulingWeek = false; //will we be scheduling entire weeks?
+		boolean alwaysAwake;
+		int wakeTime = 6; //put in terms of number of time steps
+		int sleepTime = 22; //put in terms of number of time steps
 		// ===============================================
 
 		//DECLARING VARIABLES ===============================
@@ -30,12 +33,15 @@ public class ApplianceScheduler {
 		double probNew = 0;
 		double probOld;
 		boolean trip = false;
+		int operable = 0;
 		int timeStep = 60/timeStepInMinutes; //time step length in minutes !!!NEEDS TO BE WHOLE NUMBER!!!
 		ArrayList<Integer> activeTimeSteps = new ArrayList<Integer>();
 		ArrayList<Integer> turnOnTimeSteps = new ArrayList<Integer>();
 		ArrayList<Integer> occupancyData = new ArrayList<Integer>();
 		ArrayList<Integer> dailySchedule = new ArrayList<Integer>();
-		int dayCount=0;
+		ArrayList<Integer> awakeSchedule = new ArrayList<Integer>();
+		ArrayList<Integer> operationPossible = new ArrayList<Integer>();
+		int dayCount;
 		int Ncount=3;
 		FileWriter dailyWriter = new FileWriter("C:\\Users\\Hannah\\Desktop\\DailySchedules.csv");
 		FileWriter weeklyWriter = new FileWriter("C:\\Users\\Hannah\\Desktop\\WeeklySchedules.csv");
@@ -85,7 +91,39 @@ public class ApplianceScheduler {
 				occupied++;	
 			}
 		}
+		System.out.println(occupancyData);
 		//======================================================
+
+		//GATHER AWAKE/SLEEP INFORMATION ======================= //integrate always awake functionality
+		dayCount = 1;
+		for (int i = 0;i<occupancyData.size();i++){
+			if (i>= (wakeTime-1) && i < (sleepTime-1)){
+				awakeSchedule.add(1);
+			}else{
+				awakeSchedule.add(0);
+			}
+			if(i==24*timeStep*dayCount){
+				wakeTime = wakeTime + 24*timeStep;
+				sleepTime = sleepTime + 24*timeStep;
+				dayCount++;
+			}
+		}
+		System.out.println("===Awake Schedule===");
+		System.out.println(awakeSchedule);
+		//=====================================================
+
+		//CREATE OPERATION-POSSIBLE SCHEDULE===================
+		//combines awake and occupied schedules
+		for (int i = 0; i<occupancyData.size();i++){
+			if(awakeSchedule.get(i)==1 && occupancyData.get(i)==1){
+				operationPossible.add(1);
+				operable++;
+			}else{
+				operationPossible.add(0);
+			}
+		}
+		System.out.println(operationPossible);
+		//===================================================
 
 		//DISHWASHER PRESENCE IN HOUSEHOLD=================
 		determinePresenceOfDishwasher = Math.random();
@@ -197,6 +235,7 @@ public class ApplianceScheduler {
 		} 
 
 		//PARSE SCHEDULE INTO DAYS AND WRITE TO CSV ==============================
+		dayCount = 0;
 		for (int r = 0; r < applianceSchedule.length;r++){
 			dailySchedule.add(applianceSchedule[r]);
 			if (dailySchedule.size()==24*timeStep){
