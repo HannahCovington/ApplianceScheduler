@@ -222,12 +222,14 @@ public class ApplianceScheduler {
 				weeklyWriter.append("============================\n\n");
 				weeklyWriter.append("Schedule:Week:Daily,\n");
 				weeklyWriter.append("\tWeek_"+weekCount+",			!- Name\n");
-				//while (dayCount <= 7){
-					//weeklyWriter.append("\tDay_"+dayCount+",			!- Day "+dayCount+" Schedule:Day Name \n");
-				//}
+				while (dayCount <= 7){
+					weeklyWriter.append("\tDay_"+dayCount+",			!- Day "+dayCount+" Schedule:Day Name \n");
+					dayCount++;
+				}
 				weeklyWriter.close();
 				System.out.println("WEEKLY WRITTEN");
 			}
+			//====================================================
 
 		}
 		
