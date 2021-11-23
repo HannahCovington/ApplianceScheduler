@@ -38,6 +38,7 @@ public class ApplianceScheduler {
 		int dayCount=0;
 		int Ncount=3;
 		FileWriter dailyWriter = new FileWriter("C:\\Users\\Hannah\\Desktop\\DailySchedules.csv");
+		FileWriter weeklyWriter = new FileWriter("C:\\Users\\Hannah\\Desktop\\WeeklySchedules.csv");
 		//=================================================
 		
 		//CHECK VALIDITY OF TIME STEP======================
@@ -53,31 +54,37 @@ public class ApplianceScheduler {
 		dailyWriter.append("============================\n");
 		dailyWriter.append("Paste the Below Schedules Into the\n 'SCHEDULE:DAY:LIST' \nSection in IDF File\n");
 		dailyWriter.append("============================\n\n");
+		if (schedulingWeek = true){
+			weeklyWriter.append("============================\n");
+			weeklyWriter.append("Paste the Below Schedules Into the\n 'SCHEDULE:WEEK:DAILY' \nSection in IDF File\n");
+			weeklyWriter.append("============================\n\n");
+		}
 
 		//GET OCCUPANCY DATA ==============================
-			//reading file
-			File data = new File("C:\\Users\\Hannah\\Desktop\\Occupancy.csv");
-			Scanner scanner = new Scanner(data);
-			scanner.useDelimiter(",");
-			while (scanner.hasNext()) {
-				occupancyData.add(scanner.nextInt());
+		//reading file
+		File data = new File("C:\\Users\\Hannah\\Desktop\\Occupancy.csv");
+		Scanner scanner = new Scanner(data);
+		scanner.useDelimiter(",");
+		while (scanner.hasNext()) {
+			occupancyData.add(scanner.nextInt());
+		}
+		scanner.close();
+		System.out.println("===Occupancy Size===");
+		System.out.println("size: " + occupancyData.size());
+		//making sure it is a proper length
+		if (occupancyData.size()%(24*timeStep) != 0){
+			System.out.println("=========================================================");
+			System.out.println("ERROR: Occupancy data does not represent a whole number of days.");
+			System.out.println("=========================================================");
+		}
+		//creating appliance schedule array with length based on occupancy data (length of sim)
+		int[] applianceSchedule = new int[occupancyData.size()];
+		//how many time steps are occupied? (add awake later)
+		for (int i = 0; i<occupancyData.size();i++) {
+			if (occupancyData.get(i)==1) {
+				occupied++;	
 			}
-			scanner.close();
-			System.out.println("OCCUPANCY:");
-			System.out.println(occupancyData);
-			System.out.println("size: " + occupancyData.size());
-			//making sure it is a proper length
-			if (occupancyData.size()%(24*timeStep) != 0){
-				System.out.println("=========================================================");
-				System.out.println("ERROR: Occupancy data does not represent a whole number of days.");
-				System.out.println("=========================================================");
-			}
-			//how many time steps are occupied? (add awake later)
-			for (int i = 0; i<occupancyData.size();i++) {
-				if (occupancyData.get(i)==1) {
-					occupied++;	
-				}
-			}
+		}
 		//======================================================
 
 		//DISHWASHER PRESENCE IN HOUSEHOLD=================
@@ -88,7 +95,7 @@ public class ApplianceScheduler {
 		}else {
 			dishwasherPresent = true;
 		}
-		System.out.println("dishwasher presence");
+		System.out.println("===Dishwasher Presence===");
 		System.out.println(dishwasherPresent);
 		//=========================================================
 
@@ -119,7 +126,7 @@ public class ApplianceScheduler {
 				loadsThisWeek = 7;
 			}
 		}
-		System.out.println("loads");
+		System.out.println("===No of Loads===");
 		System.out.println(loadsThisWeek);
 		//===================================================
 		
@@ -165,10 +172,9 @@ public class ApplianceScheduler {
 				}
 			probNew = 0; //reset probability counter for next load
 			}	
-			System.out.println("Active Time Steps:");
+			System.out.println("===Active Time Steps===");
 			System.out.println(activeTimeSteps);
 			//finalizing schedule
-			int[] applianceSchedule = new int[occupancyData.size()];
 			int occupiedCount=0; //CHANGE TO POSSIBLE COUNT LATER ON
 			for(int i = 0; i < occupancyData.size();i++) {
 				if (applianceSchedule[i] == 1) {
@@ -187,55 +193,48 @@ public class ApplianceScheduler {
 					applianceSchedule[i] = 0;
 				}
 			}
-			System.out.println(Arrays.toString(applianceSchedule));
 			//================================================
+		} 
 
-			//PARSE SCHEDULE INTO DAYS AND WRITE TO CSV ==============================
-			for (int r = 0; r < applianceSchedule.length;r++){
-				dailySchedule.add(applianceSchedule[r]);
-				if (dailySchedule.size()==24*timeStep){
-					dayCount++;
-					dailyWriter.append("Schedule:Day:List,\n");
-					dailyWriter.append("\tDay_"+dayCount+",			!- Name\n");
-					dailyWriter.append("\tany number,		!- Schedule Type Limits Name\n");
-					dailyWriter.append("\tNo,			!- Interpolate to Timestep\n");
-					dailyWriter.append("\t"+timeStepInMinutes+",			!- Minutes per Item\n");
-					dailyWriter.append("\t"+Integer.toString(dailySchedule.get(0))+",			!- Value 1\n");
-					for (int w = 1; w < dailySchedule.size(); w++) {
-						dailyWriter.append("\t"+Integer.toString(dailySchedule.get(w))+",			!- N"+Ncount+"\n");
-						Ncount++;
-					}
-					dailyWriter.append("\n");
-					dailySchedule.clear();
-					Ncount = 3;
+		//PARSE SCHEDULE INTO DAYS AND WRITE TO CSV ==============================
+		for (int r = 0; r < applianceSchedule.length;r++){
+			dailySchedule.add(applianceSchedule[r]);
+			if (dailySchedule.size()==24*timeStep){
+				dayCount++;
+				dailyWriter.append("Schedule:Day:List,\n");
+				dailyWriter.append("\tDay_"+dayCount+",			!- Name\n");
+				dailyWriter.append("\tany number,		!- Schedule Type Limits Name\n");
+				dailyWriter.append("\tNo,			!- Interpolate to Timestep\n");
+				dailyWriter.append("\t"+timeStepInMinutes+",			!- Minutes per Item\n");
+				dailyWriter.append("\t"+Integer.toString(dailySchedule.get(0))+",			!- Value 1\n");
+				for (int w = 1; w < dailySchedule.size(); w++) {
+					dailyWriter.append("\t"+Integer.toString(dailySchedule.get(w))+",			!- N"+Ncount+"\n");
+					Ncount++;
 				}
+				dailyWriter.append("\n");
+				dailySchedule.clear();
+				Ncount = 3;
 			}
-			//==================================================
-
-			//WRITE TO WEEKLY SCHEDULE CSV============================== move to after everything
-			schedulingWeek = true;
-			dayCount = 1;
-			int weekCount = 1; //CHANGE LATER
-			if (schedulingWeek = true){
-				FileWriter weeklyWriter = new FileWriter("C:\\Users\\Hannah\\Desktop\\WeeklySchedules.csv");
-				weeklyWriter.append("============================\n");
-				weeklyWriter.append("Paste the Below Schedules Into the\n 'SCHEDULE:WEEK:DAILY' \nSection in IDF File\n");
-				weeklyWriter.append("============================\n\n");
-				weeklyWriter.append("Schedule:Week:Daily,\n");
-				weeklyWriter.append("\tWeek_"+weekCount+",			!- Name\n");
-				while (dayCount <= 7){
-					weeklyWriter.append("\tDay_"+dayCount+",			!- Day "+dayCount+" Schedule:Day Name \n");
-					dayCount++;
-				}
-				System.out.println("WEEKLY WRITTEN");
-				weeklyWriter.close();
-			}
-			//====================================================
-
 		}
 		dailyWriter.close();
+		System.out.println("DAILY OUTPUT FILE WRITTEN");
+		//==================================================
 
-		//------------------------------------------------------------------
+		//WRITE TO WEEKLY SCHEDULE CSV==============================
+		schedulingWeek = true;
+		dayCount = 1;
+		int weekCount = 1; //CHANGE LATER
+		if (schedulingWeek = true){
+			weeklyWriter.append("Schedule:Week:Daily,\n");
+			weeklyWriter.append("\tWeek_"+weekCount+",			!- Name\n");
+			while (dayCount <= 7){
+				weeklyWriter.append("\tDay_"+dayCount+",			!- Day "+dayCount+" Schedule:Day Name \n");
+				dayCount++;
+			}
+			weeklyWriter.close();
+			System.out.println("WEEKLY OUTPUT FILE WRITTEN");
+		}
+		//===================================================
 		
 	}
 
