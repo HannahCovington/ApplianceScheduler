@@ -9,7 +9,7 @@ public class ApplianceScheduler {
 	public static void main(String[] args) throws IOException {
 		
 		//INPUTS=======================================
-		double dishwasherNotPresentProb = .5120; //probability of there not being a dishwasher in the home
+		double dishwasherNotPresentProb = 0;//.5120; //probability of there not being a dishwasher in the home
 		double sit1prob = .327; //probability for zero runs 
 		double sit2prob = .188 + sit1prob; //probability for one run
 		double sit3prob = .278 + sit2prob; //probability for 2 to 3 runs
@@ -17,9 +17,9 @@ public class ApplianceScheduler {
 		int timeStepInMinutes = 60; //time step length in minutes !!!MAKE EASILY DIVISIBLE INTO 60!!!
 		int duration = 1; //number of timesteps the dishwasher is run 
 		boolean schedulingWeek = false; //will we be scheduling entire weeks?
-		boolean alwaysAwake;
-		int wakeTime = 6; //put in terms of number of time steps
-		int sleepTime = 22; //put in terms of number of time steps
+		boolean alwaysAwake=true;
+		int wakeTime = 6; //put in terms of number of time steps for a day
+		int sleepTime = 22; //put in terms of number of time steps for a day
 		// ===============================================
 
 		//DECLARING VARIABLES ===============================
@@ -34,7 +34,7 @@ public class ApplianceScheduler {
 		double probOld;
 		boolean trip = false;
 		int operable = 0;
-		int timeStep = 60/timeStepInMinutes; //time step length in minutes !!!NEEDS TO BE WHOLE NUMBER!!!
+		int timeStep = 60/timeStepInMinutes; //time steps per hour NEEDS TO BE WHOLE #
 		ArrayList<Integer> activeTimeSteps = new ArrayList<Integer>();
 		ArrayList<Integer> turnOnTimeSteps = new ArrayList<Integer>();
 		ArrayList<Integer> occupancyData = new ArrayList<Integer>();
@@ -45,6 +45,7 @@ public class ApplianceScheduler {
 		int Ncount=3;
 		FileWriter dailyWriter = new FileWriter("C:\\Users\\Hannah\\Desktop\\DailySchedules.csv");
 		FileWriter weeklyWriter = new FileWriter("C:\\Users\\Hannah\\Desktop\\WeeklySchedules.csv");
+		FileWriter testWriter = new FileWriter("C:\\Users\\Hannah\\Desktop\\schedulingTest.csv");
 		//=================================================
 		
 		//CHECK VALIDITY OF TIME STEP======================
@@ -91,25 +92,28 @@ public class ApplianceScheduler {
 				occupied++;	
 			}
 		}
-		System.out.println(occupancyData);
 		//======================================================
 
 		//GATHER AWAKE/SLEEP INFORMATION ======================= //integrate always awake functionality
-		dayCount = 1;
-		for (int i = 0;i<occupancyData.size();i++){
-			if (i>= (wakeTime-1) && i < (sleepTime-1)){
+		if (alwaysAwake != true){
+			dayCount = 1;
+			for (int i = 0;i<occupancyData.size();i++){
+				if (i>= (wakeTime-1) && i < (sleepTime-1)){
 				awakeSchedule.add(1);
-			}else{
+				}else{
 				awakeSchedule.add(0);
+				}
+				if(i==24*timeStep*dayCount){
+					wakeTime = wakeTime + 24*timeStep;
+					sleepTime = sleepTime + 24*timeStep;
+					dayCount++;
+				}
 			}
-			if(i==24*timeStep*dayCount){
-				wakeTime = wakeTime + 24*timeStep;
-				sleepTime = sleepTime + 24*timeStep;
-				dayCount++;
+		}else{
+			for (int i = 0;i<occupancyData.size();i++){
+				awakeSchedule.add(1);
 			}
 		}
-		System.out.println("===Awake Schedule===");
-		System.out.println(awakeSchedule);
 		//=====================================================
 
 		//CREATE OPERATION-POSSIBLE SCHEDULE===================
@@ -122,7 +126,6 @@ public class ApplianceScheduler {
 				operationPossible.add(0);
 			}
 		}
-		System.out.println(operationPossible);
 		//===================================================
 
 		//DISHWASHER PRESENCE IN HOUSEHOLD=================
@@ -167,9 +170,9 @@ public class ApplianceScheduler {
 		System.out.println("===No of Loads===");
 		System.out.println(loadsThisWeek);
 		//===================================================
-		
+
 		//DISTRIBUTING PROBABILITY FOR EACH TIMESTEP==================
-		double timeStepProb = 1d/occupied; //for now, everything has same probability CHANGE TO POSSIBLE COUNT LATER ON
+		double timeStepProb = 1d/operable; //for now, everything has same probability CHANGE TO POSSIBLE COUNT LATER ON
 		//============================================================
 	
 		//SCHEDULING THE APPLIANCE====================================
@@ -189,7 +192,7 @@ public class ApplianceScheduler {
 					break;
 				}
 				determineTimeStep = Math.random(); //roll random number for this load
-				for (int i = 0; i < occupied; i++) {
+				for (int i = 0; i < operable; i++) {
 					probOld = probNew;
 					probNew = probOld + timeStepProb;
 					if (determineTimeStep > probOld && determineTimeStep <= probNew) { // when the load random number lands within time step probability
@@ -213,21 +216,21 @@ public class ApplianceScheduler {
 			System.out.println("===Active Time Steps===");
 			System.out.println(activeTimeSteps);
 			//finalizing schedule
-			int occupiedCount=0; //CHANGE TO POSSIBLE COUNT LATER ON
-			for(int i = 0; i < occupancyData.size();i++) {
-				if (applianceSchedule[i] == 1) {
-					if(occupancyData.get(i) == 1) {
-						occupiedCount++;
+			int operationalCount=0; //used for tracking operational timesteps. Previous step (activeTimeSteps, turnOnTimeSteps) only consider operational timesteps
+			for(int i = 0; i < occupancyData.size();i++) { //move along every timestep
+				if (applianceSchedule[i] == 1) { //if this time step has already been scheduled as 'on' due to duration------
+					if(operationPossible.get(i) == 1) {  //leave schedule be but increase operational counter if this timestep is operable.
+						operationalCount++;
 					}
-				}else if(occupancyData.get(i) == 1) {
-					if(turnOnTimeSteps.contains(occupiedCount)) {
-						for (int p = i; p<=i+duration-1;p++)
-						applianceSchedule[p] = 1;
+				}else if(operationPossible.get(i) == 1) { //if operation is possible----
+					if(turnOnTimeSteps.contains(operationalCount)) {//check if this timestep is included in turnOnTimeSteps array
+						for (int p = i; p<=i+duration-1;p++) //if it is, turn on the appliance for its entire duration
+						applianceSchedule[p] = 1; 
 					}else {
-						applianceSchedule[i] = 0;
+						applianceSchedule[i] = 0; //otherwise, do nothing and keep increasing timestep (i)
 					}
-					occupiedCount++;
-				}else if(occupancyData.get(i) == 0) {
+					operationalCount++; //increase operational counter. Regardless of turnOnTimeSteps array, we just went over operable time step
+				}else if(operationPossible.get(i) == 0) { //if operation not possible, turn appliance off for this timestep-----
 					applianceSchedule[i] = 0;
 				}
 			}
@@ -235,14 +238,14 @@ public class ApplianceScheduler {
 		} 
 
 		//PARSE SCHEDULE INTO DAYS AND WRITE TO CSV ==============================
-		dayCount = 0;
+		dayCount = 0; //used for labelling purposes
 		for (int r = 0; r < applianceSchedule.length;r++){
-			dailySchedule.add(applianceSchedule[r]);
-			if (dailySchedule.size()==24*timeStep){
-				dayCount++;
+			dailySchedule.add(applianceSchedule[r]); //add appliance schedule data to this day
+			if (dailySchedule.size()==24*timeStep){ //once day has been filled, write the data to file
+				dayCount++; //increase from last time
 				dailyWriter.append("Schedule:Day:List,\n");
 				dailyWriter.append("\tDay_"+dayCount+",			!- Name\n");
-				dailyWriter.append("\tany number,		!- Schedule Type Limits Name\n");
+				dailyWriter.append("\tfraction,		!- Schedule Type Limits Name\n");
 				dailyWriter.append("\tNo,			!- Interpolate to Timestep\n");
 				dailyWriter.append("\t"+timeStepInMinutes+",			!- Minutes per Item\n");
 				dailyWriter.append("\t"+Integer.toString(dailySchedule.get(0))+",			!- Value 1\n");
@@ -251,19 +254,29 @@ public class ApplianceScheduler {
 					Ncount++;
 				}
 				dailyWriter.append("\n");
-				dailySchedule.clear();
-				Ncount = 3;
+				dailySchedule.clear(); //clear out daily schedule in order to begin scheduling new day
+				Ncount = 3; //reset Ncount for next day, for labelling purposes 
 			}
 		}
 		dailyWriter.close();
 		System.out.println("DAILY OUTPUT FILE WRITTEN");
 		//==================================================
 
+		//WRITE TESTING FILE==============================
+		testWriter.append("TS\tOCC\tWAKE\tOPER\tAPP\n");
+		int counter = 0;
+		for (int r = 0; r < applianceSchedule.length;r++){
+			counter++;
+			testWriter.append(counter + "\t" + occupancyData.get(r)+"\t"+ awakeSchedule.get(r)+"\t"+operationPossible.get(r)+"\t"+applianceSchedule[r]+"\n");
+		}
+		testWriter.close();
+		System.out.println("test OUTPUT FILE WRITTEN");
+		//==============================================
 		//WRITE TO WEEKLY SCHEDULE CSV==============================
-		schedulingWeek = true;
-		dayCount = 1;
-		int weekCount = 1; //CHANGE LATER
-		if (schedulingWeek = true){
+		schedulingWeek = true; //if we are scheduling for an entire week
+		dayCount = 1; //used for labelling purposes here
+		int weekCount = 1; //MOVE TO UP THERE, IMPLEMENT LATER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		if (schedulingWeek = true){ //write scheduling file if we are scheduling for an entire week. 
 			weeklyWriter.append("Schedule:Week:Daily,\n");
 			weeklyWriter.append("\tWeek_"+weekCount+",			!- Name\n");
 			while (dayCount <= 7){
