@@ -17,7 +17,7 @@ public class ApplianceScheduler {
 		int timeStepInMinutes = 60; //time step length in minutes !!!MAKE EASILY DIVISIBLE INTO 60!!!
 		int duration = 1; //number of timesteps the dishwasher is run 
 		boolean schedulingWeek = false; //will we be scheduling entire weeks?
-		boolean alwaysAwake=true;
+		boolean alwaysAwake=false;
 		int wakeTime = 6; //put in terms of number of time steps for a day
 		int sleepTime = 22; //put in terms of number of time steps for a day
 		// ===============================================
@@ -127,7 +127,8 @@ public class ApplianceScheduler {
 			}
 		}
 		//===================================================
-
+		System.out.println("===operation possible schedule===");
+		System.out.println(operationPossible);							//testing
 		//DISHWASHER PRESENCE IN HOUSEHOLD=================
 		determinePresenceOfDishwasher = Math.random();
 		if (determinePresenceOfDishwasher <= dishwasherNotPresentProb) {
@@ -172,7 +173,9 @@ public class ApplianceScheduler {
 		//===================================================
 
 		//DISTRIBUTING PROBABILITY FOR EACH TIMESTEP==================
-		double timeStepProb = 1d/operable; //for now, everything has same probability CHANGE TO POSSIBLE COUNT LATER ON
+		double timeStepProb = 1d/operable; //for now, everything has same probability
+		System.out.println("===time step prob===");
+		System.out.println(timeStepProb);			//testing
 		//============================================================
 	
 		//SCHEDULING THE APPLIANCE====================================
@@ -182,7 +185,7 @@ public class ApplianceScheduler {
 			int safeGuard = 0;
 			while(j<=loadsThisWeek) { //go until number of loads reached 
 				safeGuard++;
-				if (safeGuard == 100000000) { //prevents infinite loop in case loading not possible.
+				if (safeGuard == 20) { //prevents infinite loop in case loading not possible.
 					System.out.println("=========================================================");
 					System.out.println("ERROR: SafeGuard Reached. Schedule output will not be correct. Ensure that loading is possible.");
 					System.out.println("Safeguard may be erroneously reached due to high frequency of appliance operation");
@@ -192,13 +195,17 @@ public class ApplianceScheduler {
 					break;
 				}
 				determineTimeStep = Math.random(); //roll random number for this load
+				System.out.println("===Random Number===\n"+determineTimeStep+"\n");
 				for (int i = 0; i < operable; i++) {
 					probOld = probNew;
 					probNew = probOld + timeStepProb;
+					System.out.println("===Prob Range===\n"+probOld+" & "+probNew);
 					if (determineTimeStep > probOld && determineTimeStep <= probNew) { // when the load random number lands within time step probability
 						for (int k=i;k<=i+duration-1;k++) {
+							System.out.println("YES");
 							if(activeTimeSteps.contains(k)==true || k>=occupancyData.size() ) { //ensuring loads don't overlap or get cutoff by schedule length
 								trip = true; //re roll to avoid overlap or cutoff
+								System.out.println("!TRIP ACTIVATED!");
 							}
 						}
 						if (trip==false) {
@@ -209,6 +216,8 @@ public class ApplianceScheduler {
 							j++;
 						}
 						trip = false; //reset trip boolean for next load
+					}else{
+						System.out.println("NO");
 					}
 				}
 			probNew = 0; //reset probability counter for next load
@@ -237,7 +246,7 @@ public class ApplianceScheduler {
 			//================================================
 		} 
 
-		//PARSE SCHEDULE INTO DAYS AND WRITE TO CSV ==============================
+		//SEPARATE SCHEDULE INTO DAYS AND WRITE TO CSV ==============================
 		dayCount = 0; //used for labelling purposes
 		for (int r = 0; r < applianceSchedule.length;r++){
 			dailySchedule.add(applianceSchedule[r]); //add appliance schedule data to this day
@@ -272,6 +281,7 @@ public class ApplianceScheduler {
 		testWriter.close();
 		System.out.println("test OUTPUT FILE WRITTEN");
 		//==============================================
+		
 		//WRITE TO WEEKLY SCHEDULE CSV==============================
 		schedulingWeek = true; //if we are scheduling for an entire week
 		dayCount = 1; //used for labelling purposes here
