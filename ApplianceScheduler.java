@@ -116,7 +116,7 @@ public class ApplianceScheduler {
 		//DISTRIBUTING PROBABILITY FOR EACH TIMESTEP-------------------
 		double timeStepProb = 1d/occupied; //for now, everything has same probability
 		//------------------------------------------------------------
-
+		dishwasherPresent=true;
 		//SCHEDULING THE APPLIANCE--------------------------------------
 		if (dishwasherPresent == true) {
 			//getting which occupied timesteps are activated
@@ -219,9 +219,9 @@ public class ApplianceScheduler {
 				FileWriter weeklyWriter = new FileWriter("C:\\Users\\Hannah\\Desktop\\WeeklySchedules.csv");
 				weeklyWriter.append("============================\n");
 				weeklyWriter.append("Paste the Below Schedules Into the\n 'SCHEDULE:WEEK:DAILY' \nSection in IDF File\n");
-				//weeklyWriter.append("============================\n\n");
-				//weeklyWriter.append("Schedule:Week:Daily,\n");
-				//weeklyWriter.append("\tWeek_"+weekCount+",			!- Name\n");
+				weeklyWriter.append("============================\n\n");
+				weeklyWriter.append("Schedule:Week:Daily,\n");
+				weeklyWriter.append("\tWeek_"+weekCount+",			!- Name\n");
 				//while (dayCount <= 7){
 					//weeklyWriter.append("\tDay_"+dayCount+",			!- Day "+dayCount+" Schedule:Day Name \n");
 				//}
