@@ -65,11 +65,26 @@ public class ApplianceScheduler {
 		dailyWriter.append("============================\n");
 		dailyWriter.append("Paste the Below Schedules Into the\n 'SCHEDULE:DAY:LIST' \nSection in IDF File\n");
 		dailyWriter.append("============================\n\n");
+		dailyWriter.append("Schedule:Day:List,\n");
+		dailyWriter.append("\tarbitraryDay,		!- Name\n"); //need to create an arbitrary schedule for days of the week we don't care about (like 'custom days')
+		dailyWriter.append("\tfraction,		!- Schedule Type Limits Name\n");
+		dailyWriter.append("\tNo,			!- Interpolate to Timestep\n");
+		dailyWriter.append("\t60,			!- Minutes per Item\n");
+		dailyWriter.append("\t0			!- Value 1\n");
+		for (int i = 1; i < 24; i++) {
+			if(i == 23){
+				dailyWriter.append("\t0;			!- N"+Ncount+"\n"); //need semicolon for last entry
+			}else{
+			dailyWriter.append("\t0,			!- N"+Ncount+"\n");
+			}
+		Ncount++;
+		}
 		if (schedulingWeek == true){
 			weeklyWriter.append("============================\n");
 			weeklyWriter.append("Paste the Below Schedules Into the\n 'SCHEDULE:WEEK:DAILY' \nSection in IDF File\n");
 			weeklyWriter.append("============================\n\n");
 		}
+		Ncount = 3; //resetting Ncount for later
 		//=====================================================
 
 		//GET OCCUPANCY DATA ==============================
@@ -254,7 +269,7 @@ public class ApplianceScheduler {
 				dailySchedule.add(applianceSchedule[r]); //add appliance schedule data to this day
 				if (dailySchedule.size()==24*timeStep){ //once day has been filled, write the data to file
 					dayCount++; //increase from last time
-					dailyWriter.append("Schedule:Day:List,\n");
+					dailyWriter.append("\nSchedule:Day:List,\n");
 					dailyWriter.append("\tDay_"+dayCount+",			!- Name\n");
 					dailyWriter.append("\tfraction,		!- Schedule Type Limits Name\n");
 					dailyWriter.append("\tNo,			!- Interpolate to Timestep\n");
@@ -279,7 +294,13 @@ public class ApplianceScheduler {
 							weekCount++;
 						}
 						if(weekDayCount == 7){
-							weeklyWriter.append("\tDay_"+dayCount+";			!- Day "+weekDayCount+" Schedule:Day Name \n"); //need semicolon for last entry
+							weeklyWriter.append("\tDay_"+dayCount+",			!- Day "+weekDayCount+" Schedule:Day Name \n");
+							weeklyWriter.append("\tarbitraryDay,		!- Holiday Schedule: Day Name \n"); //need to include these other days. 
+							weeklyWriter.append("\tarbitraryDay,		!- SummerDesignDay: Day Name \n"); //their schedule is arbitrary for now
+							weeklyWriter.append("\tarbitraryDay,		!- WinterDesignDay: Day Name \n"); //but that can be changed
+							weeklyWriter.append("\tarbitraryDay,		!- CustomDay1: Day Name \n");
+							weeklyWriter.append("\tarbitraryDay;		!- CustomDay2: Day Name \n");
+
 						}else{
 							weeklyWriter.append("\tDay_"+dayCount+",			!- Day "+weekDayCount+" Schedule:Day Name \n");
 						}
@@ -299,21 +320,6 @@ public class ApplianceScheduler {
 			}
 			System.out.println("test OUTPUT FILE WRITTEN");
 			//==============================================
-
-			//WRITE TO WEEKLY SCHEDULE CSV==============================
-			// if (schedulingWeek == true){ //write scheduling file if we are scheduling for an entire week. 
-			// 	dayCount = 1; //used for labelling purposes here
-			// 	weekCount++;
-			// 	weeklyWriter.append("Schedule:Week:Daily,\n");
-			// 	weeklyWriter.append("\tWeek_"+weekCount+",			!- Name\n");
-			// 	while (dayCount <= 7){
-			// 		weeklyWriter.append("\tDay_"+dayCount+",			!- Day "+dayCount+" Schedule:Day Name \n");
-			// 		dayCount++;
-			// 	}
-			// 	System.out.println("WEEKLY OUTPUT FILE WRITTEN");
-				
-			// }
-			//===================================================
 		}
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		dailyWriter.close();
